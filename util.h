@@ -23,13 +23,12 @@ using ivec2 = tvec2<int>;
 
 BINARY_OPERATOR_VECTORS(+)
 
-#define BIT_OPERATOR_VECTOR_NUMBER(op) __forceinline constexpr ivec2 operator op(ivec2 left, int right) { return { left.x op right, left.y op right }; }
+#define BIT_OPERATOR_VECTOR_NUMBER(op) constexpr ivec2 operator op(ivec2 left, int right) { return { left.x op right, left.y op right }; }
 
 BIT_OPERATOR_VECTOR_NUMBER(>>)
 BIT_OPERATOR_VECTOR_NUMBER(&)
 BIT_OPERATOR_VECTOR_NUMBER(*)
 
-template <typename T>
-constexpr bool operator ==(tvec2<T> left, tvec2<T> right) {
+constexpr bool operator ==(ivec2 left, ivec2 right) {
     return left.x == right.x && left.y == right.y;
 }

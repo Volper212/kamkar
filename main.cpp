@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include "kamkar.h"
 
 #if defined(WIN32) && defined(NDEBUG)

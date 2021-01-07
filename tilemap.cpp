@@ -1,5 +1,4 @@
 #include "kamkar.h"
-#include <stdio.h>
 
 #pragma warning(disable : 26812)
 
