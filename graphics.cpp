@@ -1,5 +1,5 @@
-#define GL_GLEXT_PROTOTYPES
-#include <glcorearb.h>
+#define GLEW_STATIC
+#include <glew.h>
 #include "kamkar.h"
 
 #pragma warning(disable : 26812)
@@ -10,7 +10,11 @@ constexpr int lengthof(T(&array)[N]) {
     return N;
 }
 
-static void handleGLError(GLenum source, GLenum type, uint id, GLenum severity, int length, const char *message, const void *userParam) {
+static void
+#ifdef WIN32
+__stdcall
+#endif
+handleGLError(GLenum source, GLenum type, uint id, GLenum severity, int length, const char *message, const void *userParam) {
     puts(message);
 }
 
@@ -97,6 +101,7 @@ GLFWwindow *graphics::init(const char *title) {
 
     GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, title, monitor, nullptr);
     glfwMakeContextCurrent(window);
+    glewInit();
     glfwSwapInterval(1);
     glViewport(0, 0, mode->width, mode->height);
     #ifdef _DEBUG
