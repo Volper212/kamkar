@@ -6,17 +6,25 @@
 #include "util.h"
 
 template <typename T>
-T *allocate(uint count = 1) {
-    return reinterpret_cast<T *>(malloc(count * sizeof(T)));
+T *emalloc(unsigned int count) {
+    T *const result = static_cast<T *>(malloc(count * sizeof(T)));
+    if (result == nullptr) {
+        perror("Allocation with calloc failed");
+    }
+    return result;
 }
 
 template <typename T>
-void zerofill(T *input) {
-    memset(input, 0, sizeof(T));
+T *ecalloc(unsigned int count) {
+    T *const result = static_cast<T *>(calloc(count, sizeof(T)));
+    if (result == nullptr) {
+        perror("Allocation with malloc failed");
+    }
+    return result;
 }
 
 constexpr float sqrt3 = 1.73205080757f;
-constexpr float minZoom = 0.01f;
+constexpr float minZoom = 0.002f;
 constexpr float maxZoom = 1.0f;
 constexpr float maxScroll = 100.0f;
 

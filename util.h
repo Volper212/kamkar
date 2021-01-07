@@ -23,10 +23,6 @@ using ivec2 = tvec2<int>;
 
 BINARY_OPERATOR_VECTORS(+)
 
-//#define BINARY_OPERATOR_VECTOR_NUMBER(op) template <typename T> constexpr tvec2<T> operator op(tvec2<T> left, T right) { return { left.x op right.x, left.y op right.y }; }
-
-//BINARY_OPERATOR_VECTOR_NUMBER(*)
-
 #define BIT_OPERATOR_VECTOR_NUMBER(op) __forceinline constexpr ivec2 operator op(ivec2 left, int right) { return { left.x op right, left.y op right }; }
 
 BIT_OPERATOR_VECTOR_NUMBER(>>)

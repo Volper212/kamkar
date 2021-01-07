@@ -30,19 +30,6 @@ static uint compileShader(uint type, const char *source) {
     const uint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
-    #ifdef _DEBUG
-    int result;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &result);
-    if (!result) {
-        int length;
-        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length);
-        char *message = allocate<char>(length);
-        glGetShaderInfoLog(shader, length, &length, message);
-        printf("Failed to compile %s shader: %s", type == GL_VERTEX_SHADER ? "vertex" : "fragment", message);
-        free(message);
-        glDeleteShader(shader);
-    }
-    #endif
     return shader;
 }
 
@@ -119,7 +106,7 @@ GLFWwindow *graphics::init(const char *title) {
     #endif
 
     hexWidth = sqrt3 * mode->height / mode->width;
-    hexes = allocate<Terrain>(getArea(minZoom));
+    hexes = emalloc<Terrain>(getArea(minZoom));
 
     uint vertexArray;
     glGenVertexArrays(1, &vertexArray);

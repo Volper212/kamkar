@@ -20,7 +20,7 @@ constexpr uint tilemapTotalSize = 1 << (treeSizeLog2 * maxDepth + chunkSizeLog2)
 static_assert(tilemapTotalSize, "tilemap size exceeds 32 bit unsigned integer limit");
 
 struct Tree {
-    Tree *subtrees[treeSize][treeSize];
+    void *subtrees[treeSize][treeSize];
 };
 
 struct Tilemap {
@@ -50,7 +50,7 @@ static vec2 hexToPixel(ivec2 hex) {
 }
 
 static Chunk *generateChunk(ivec2 position, fnl_state *fnlState) {
-    Chunk *chunk = allocate<Chunk>();
+    Chunk *const chunk = emalloc<Chunk>(1);
     for (int x = 0; x < chunkSize; ++x) {
         for (int y = 0; y < chunkSize; ++y) {
             const vec2 pixel = hexToPixel(position * chunkSize + ivec2{ x, y });
@@ -61,11 +61,9 @@ static Chunk *generateChunk(ivec2 position, fnl_state *fnlState) {
 };
 
 Tilemap *createTilemap() {
-    Tilemap *tilemap = allocate<Tilemap>();
-    zerofill(tilemap);
+    Tilemap *const tilemap = ecalloc<Tilemap>(1);
     tilemap->fnlState = fnlCreateState();
     tilemap->fnlState.fractal_type = FNL_FRACTAL_FBM;
-    
     return tilemap;
 };
 
@@ -74,23 +72,22 @@ Terrain getTile(Tilemap *tilemap, ivec2 position) {
     const ivec2 chunkPosition = position >> chunkSizeLog2;
 
     if (tilemap->chunkCache == nullptr || tilemap->cachePosition != chunkPosition) {
-        Tree *tree = &tilemap->tree;
+        void *tree = &tilemap->tree;
 
         for (int currentDepth = maxDepth; currentDepth >= 0; --currentDepth) {
             const ivec2 treePosition = (chunkPosition >> (currentDepth * treeSizeLog2)) & (treeSize - 1);
-            Tree *&currentTree = tree->subtrees[treePosition.x][treePosition.y];
-            if (currentTree == nullptr) {
+            void *&subtree = static_cast<Tree *>(tree)->subtrees[treePosition.x][treePosition.y];
+            if (subtree == nullptr) {
                 if (currentDepth > 0) {
-                    currentTree = allocate<Tree>();
-                    zerofill(currentTree);
+                    subtree = ecalloc<Tree>(1);
                 } else {
-                    currentTree = reinterpret_cast<Tree *>(generateChunk(chunkPosition, &tilemap->fnlState));
+                    subtree = generateChunk(chunkPosition, &tilemap->fnlState);
                 }
             }
-            tree = currentTree;
+            tree = subtree;
         }
 
-        tilemap->chunkCache = reinterpret_cast<Chunk *>(tree);
+        tilemap->chunkCache = static_cast<Chunk *>(tree);
         tilemap->cachePosition = chunkPosition;
     }
 
