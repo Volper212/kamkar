@@ -1,14 +1,10 @@
 #define GLEW_STATIC
 #include <glew.h>
+#include <stb_image.h>
 #include "kamkar.h"
 
 #pragma warning(disable : 26812)
 #pragma warning(disable : 33011)
-
-template <typename T, int N>
-constexpr int lengthof(T(&array)[N]) {
-    return N;
-}
 
 static void
 #ifdef WIN32
@@ -17,17 +13,6 @@ __stdcall
 handleGLError(GLenum source, GLenum type, uint id, GLenum severity, int length, const char *message, const void *userParam) {
     puts(message);
 }
-
-enum Uniform : uchar {
-    HexSize,
-    Width,
-    Offset,
-    Camera,
-    Zoom,
-    Positions
-};
-
-static float hexWidth;
 
 static uint compileShader(uint type, const char *source) {
     const uint shader = glCreateShader(type);
@@ -41,18 +26,27 @@ struct Rect {
     ivec2 size;
 };
 
-int ceilInt(float input) {
-    const int trunced = int(input);
-    return trunced + (trunced < input);
-}
-
 static int ceilHalf(int input) {
     return (input >> 1) + (input & 1);
 }
 
+static uint buffers[3];
+static uint hexProgram, entityProgram;
+static uint vertexArrays[2];
+static Terrain *hexes;
+static struct {
+    vec2 positions[12];
+    vec2 hexSize;
+    vec2 camera;
+    ivec2 cameraHex;
+    ivec2 offset;
+    int width;
+    float zoom;
+} uniforms;
+
 static Rect getRect(float zoom) {
-    const int tempWidth = ceilInt(2 / (zoom * hexWidth));
-    const int tempHeight = ceilInt(2 / (zoom * hexHeight));
+    const int tempWidth = iceil(2 / (zoom * uniforms.hexSize.x));
+    const int tempHeight = iceil(2 / (zoom * hexHeight));
     Rect result;
     result.position.x = -ceilHalf(tempWidth) - 1;
     result.position.y = -(ceilHalf(tempHeight) + (ceilHalf(tempHeight) & 1));
@@ -66,22 +60,15 @@ static int getArea(float zoom) {
     return size.x * size.y;
 }
 
-static ivec2 cameraHex = { 0, 0 };
-
-static void updateHexes(Terrain *hexes, Rect rect, Tilemap *tilemap) {
-    for (int x = 0; x < rect.size.x; ++x) {
-        for (int y = 0; y < rect.size.y; ++y) {
-            const ivec2 currentPosition = { x, y };
-            ivec2 axialPosition = currentPosition + rect.position + cameraHex;
-            axialPosition.x -= ceilHalf(axialPosition.y - ((cameraHex.y & 1) ^ (axialPosition.y & 1)));
-            hexes[x + y * rect.size.x] = getTile(tilemap, axialPosition);
-        }
-    }
-
-    glBufferData(GL_ARRAY_BUFFER, rect.size.x * rect.size.y, hexes, GL_DYNAMIC_DRAW);
+vec2 graphics::getCamera() {
+    return uniforms.camera;
 }
 
-static Terrain *hexes;
+ivec2 graphics::getCameraHex() {
+    ivec2 result = uniforms.cameraHex;
+    result.x -= ceilHalf(result.y);
+    return result;
+}
 
 GLFWwindow *graphics::init(const char *title) {
     glfwInit();
@@ -108,14 +95,11 @@ GLFWwindow *graphics::init(const char *title) {
     glDebugMessageCallback(handleGLError, nullptr);
     #endif
 
-    hexWidth = sqrt3 * mode->height / mode->width;
+    uniforms.hexSize.x = sqrt3 * mode->height / mode->width;
+    uniforms.hexSize.y = hexHeight;
     hexes = emalloc<Terrain>(getArea(minZoom));
 
-    uint vertexArray;
-    glGenVertexArrays(1, &vertexArray);
-    glBindVertexArray(vertexArray);
-
-    float positions[] = {
+    vec2 positions[] = {
         0.0f, -1.0f,
         -0.5f, -0.5f,
         0.5f, -0.5f,
@@ -124,64 +108,121 @@ GLFWwindow *graphics::init(const char *title) {
         0.0f, 1.0f
     };
 
-    for (int i = 0; i < lengthof(positions); i += 2) {
-        positions[i] *= hexWidth;
+    for (int i = 0; i < lengthof(positions); ++i) {
+        positions[i].x *= uniforms.hexSize.x;
     }
 
-    uint buffer;
-    glGenBuffers(1, &buffer);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer);
+    for (int i = 0; i < lengthof(positions); ++i) {
+        uniforms.positions[i * 2] = positions[i];
+    }
+    
+    glGenVertexArrays(lengthof(vertexArrays), vertexArrays);
+    glGenBuffers(lengthof(buffers), buffers);
+    glBindVertexArray(vertexArrays[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
     glEnableVertexAttribArray(0);
     glVertexAttribIPointer(0, 1, GL_UNSIGNED_BYTE, 0, 0);
+    glBindVertexArray(vertexArrays[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+    glEnableVertexAttribArray(0);
+    glVertexAttribIPointer(0, 2, GL_INT, 0, 0);
 
-    uint program = glCreateProgram();
-    uint vs = compileShader(GL_VERTEX_SHADER,
-#include "vertex.glsl"
-    );
-    uint fs = compileShader(GL_FRAGMENT_SHADER,
-#include "fragment.glsl"
-    );
-    uint gs = compileShader(GL_GEOMETRY_SHADER,
-#include "geometry.glsl"
-    );
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glAttachShader(program, gs);
-    glLinkProgram(program);
-    glValidateProgram(program);
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-    glDeleteShader(gs);
-    glDetachShader(program, vs);
-    glDetachShader(program, fs);
-    glDetachShader(program, gs);
-    glUseProgram(program);
-    glUniform2f(HexSize, hexWidth, hexHeight);
-    glUniform2fv(Positions, lengthof(positions), positions);
+    {
+        const uint program = hexProgram = glCreateProgram();
+        const uint vs = compileShader(GL_VERTEX_SHADER,
+            #include "shaders/hex/vertex.glsl"
+        );
+        const uint fs = compileShader(GL_FRAGMENT_SHADER,
+            #include "shaders/hex/fragment.glsl"
+        );
+        const uint gs = compileShader(GL_GEOMETRY_SHADER,
+            #include "shaders/hex/geometry.glsl"
+        );
+        glAttachShader(program, vs);
+        glAttachShader(program, fs);
+        glAttachShader(program, gs);
+        glLinkProgram(program);
+        #ifdef _DEBUG
+        glValidateProgram(program);
+        #endif
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        glDeleteShader(gs);
+        glDetachShader(program, vs);
+        glDetachShader(program, fs);
+        glDetachShader(program, gs);
+    }
+    {
+        const uint program = entityProgram = glCreateProgram();
+        const uint vs = compileShader(GL_VERTEX_SHADER,
+            #include "shaders/entity/vertex.glsl"
+        );
+        const uint fs = compileShader(GL_FRAGMENT_SHADER, 
+            #include "shaders/entity/fragment.glsl"
+        );
+        glAttachShader(program, vs);
+        glAttachShader(program, fs);
+        glLinkProgram(program);
+        #ifdef _DEBUG
+        glValidateProgram(program);
+        #endif
+        glDeleteShader(vs);
+        glDeleteShader(fs);
+        glDetachShader(program, vs);
+        glDetachShader(program, fs);
+    }
+    
+    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    int width, height, nrChannels;
+    uchar *data = stbi_load("textures/player.bmp", &width, &height, &nrChannels, 0);
+
+    uint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
 
     return window;
 }
 
 static float scrollCache = -1.0f;
-static vec2 camera = { 0.0f, 0.0f };
 
 static bool cameraChanged = true;
 static bool cameraHexChanged = true;
 
-void graphics::render(GLFWwindow *window, Tilemap *tilemap, float zoom) {
-    if (cameraChanged) {
-        glUniform2f(Camera, camera.x, camera.y);
+void graphics::render(GLFWwindow *window, Tilemap *tilemap, const ivec2 *entities, int entityCount, float zoom) {
+    glUseProgram(hexProgram);
+    glBindVertexArray(vertexArrays[0]);
+
+    if (zoom != scrollCache || cameraHexChanged || cameraChanged) {
+        if (zoom != scrollCache || cameraHexChanged) {
+            const Rect rect = getRect(zoom);
+            uniforms.zoom = zoom;
+            uniforms.width = rect.size.x;
+            uniforms.offset = rect.position;
+            for (int x = 0; x < rect.size.x; ++x) {
+                for (int y = 0; y < rect.size.y; ++y) {
+                    const ivec2 currentPosition = { x, y };
+                    ivec2 axialPosition = currentPosition + rect.position + uniforms.cameraHex;
+                    axialPosition.x -= ceilHalf(axialPosition.y - ((uniforms.cameraHex.y & 1) ^ (axialPosition.y & 1)));
+                    const Tile *tile = getTile(tilemap, axialPosition);
+                    hexes[x + y * rect.size.x] = tile->isVisible ? tile->terrain : Terrain::None;
+                }
+            }
+
+            glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+            glBufferData(GL_ARRAY_BUFFER, rect.size.x * rect.size.y, hexes, GL_DYNAMIC_DRAW);
+        }
+
+        glBindBuffer(GL_UNIFORM_BUFFER, buffers[1]);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(uniforms), &uniforms, GL_DYNAMIC_DRAW);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffers[1]);
     }
 
-    if (zoom != scrollCache || cameraHexChanged) {
-        const Rect rect = getRect(zoom);
-        updateHexes(hexes, rect, tilemap);
-        if (zoom != scrollCache) {
-            glUniform1f(Zoom, zoom);
-            glUniform1i(Width, rect.size.x);
-            glUniform2i(Offset, rect.position.x, rect.position.y);
-        }
-    }
     scrollCache = zoom;
     cameraChanged = false;
     cameraHexChanged = false;
@@ -189,7 +230,15 @@ void graphics::render(GLFWwindow *window, Tilemap *tilemap, float zoom) {
     #ifdef _DEBUG
     glClear(GL_COLOR_BUFFER_BIT);
     #endif
+
     glDrawArrays(GL_POINTS, 0, getArea(zoom));
+
+    glUseProgram(entityProgram);
+    glBindVertexArray(vertexArrays[1]);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
+    glBufferData(GL_ARRAY_BUFFER, entityCount * sizeof(vec2), entities, GL_DYNAMIC_DRAW);
+    glDrawArrays(GL_POINTS, 0, entityCount);
+
     glfwSwapBuffers(window);
 }
 
@@ -199,12 +248,12 @@ static int signFromBool(bool isNegative) {
 
 void graphics::moveCamera(Direction direction, float distance) {
     const int sign = signFromBool(distance < 0.0f);
-    camera.xy[direction] += distance;
-    while (sign * camera.xy[direction] > 0.5f) {
-        camera.xy[direction] -= sign;
-        cameraHex.xy[direction] -= sign;
+    uniforms.camera.xy[direction] += distance;
+    while (sign * uniforms.camera.xy[direction] > 0.5f) {
+        uniforms.camera.xy[direction] -= sign;
+        uniforms.cameraHex.xy[direction] -= sign;
         if (direction == Vertical) {
-            camera.x += signFromBool(cameraHex.y & 1) * 0.5f;
+            uniforms.camera.x += signFromBool(uniforms.cameraHex.y & 1) * 0.5f;
         }
         cameraHexChanged = true;
     }

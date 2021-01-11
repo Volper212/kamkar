@@ -25,13 +25,11 @@ T *ecalloc(unsigned int count) {
 }
 
 constexpr float sqrt3 = 1.73205080757f;
-constexpr float minZoom = 0.002f;
+constexpr float minZoom = 0.005f;
 constexpr float maxZoom = 1.0f;
 constexpr float maxScroll = 100.0f;
 
 constexpr float hexHeight = 1.5f;
-
-int ceilInt(float);
 
 struct Tilemap;
 
@@ -43,12 +41,19 @@ enum Terrain : uchar {
     Mountain
 };
 
+struct Tile {
+    Terrain terrain : 7;
+    bool isVisible : 1;
+};
+
 Tilemap *createTilemap();
-Terrain getTile(Tilemap *map, ivec2 position);
+Tile *getTile(Tilemap *map, ivec2 position);
 
 namespace graphics {
     GLFWwindow *init(const char *title);
-    void render(GLFWwindow *window, Tilemap *map, float zoom);
+    void render(GLFWwindow *window, Tilemap *map, const ivec2 *entities, int entityCount, float zoom);
 
     void moveCamera(Direction direction, float distance);
+    vec2 getCamera();
+    ivec2 getCameraHex();
 }

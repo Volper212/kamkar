@@ -7,8 +7,15 @@ layout(triangle_strip, max_vertices = 6) out;
 in vec3 vColor[];
 out vec3 fColor;
 
-layout(location = 4) uniform float zoom;
-layout(location = 5) uniform vec2 positions[6];
+layout (std140, binding = 0) uniform Uniforms {
+    vec2 positions[6];
+    vec2 hexSize;
+    vec2 camera;
+    ivec2 cameraHex;
+    ivec2 offset;
+    int width;
+    float zoom;
+};
 
 void main() {
     fColor = vColor[0];

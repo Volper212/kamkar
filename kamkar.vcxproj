@@ -160,12 +160,8 @@
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="noise.cpp" />
+    <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="tilemap.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="fragment.glsl" />
-    <None Include="geometry.glsl" />
-    <None Include="vertex.glsl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="kamkar.h" />
