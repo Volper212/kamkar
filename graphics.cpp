@@ -189,43 +189,31 @@ GLFWwindow *graphics::init(const char *title) {
     return window;
 }
 
-static float scrollCache = -1.0f;
-
-static bool cameraChanged = true;
-static bool cameraHexChanged = true;
-
 void graphics::render(GLFWwindow *window, Tilemap *tilemap, const ivec2 *entities, int entityCount, float zoom) {
     glUseProgram(hexProgram);
     glBindVertexArray(vertexArrays[0]);
 
-    if (zoom != scrollCache || cameraHexChanged || cameraChanged) {
-        if (zoom != scrollCache || cameraHexChanged) {
-            const Rect rect = getRect(zoom);
-            uniforms.zoom = zoom;
-            uniforms.width = rect.size.x;
-            uniforms.offset = rect.position;
-            for (int x = 0; x < rect.size.x; ++x) {
-                for (int y = 0; y < rect.size.y; ++y) {
-                    const ivec2 currentPosition = { x, y };
-                    ivec2 axialPosition = currentPosition + rect.position + uniforms.cameraHex;
-                    axialPosition.x -= ceilHalf(axialPosition.y - ((uniforms.cameraHex.y & 1) ^ (axialPosition.y & 1)));
-                    const Tile *tile = getTile(tilemap, axialPosition);
-                    hexes[x + y * rect.size.x] = tile->isVisible ? tile->terrain : Terrain::None;
-                }
-            }
+    const Rect rect = getRect(zoom);
 
-            glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-            glBufferData(GL_ARRAY_BUFFER, rect.size.x * rect.size.y, hexes, GL_DYNAMIC_DRAW);
+    uniforms.zoom = zoom;
+    uniforms.width = rect.size.x;
+    uniforms.offset = rect.position;
+    for (int x = 0; x < rect.size.x; ++x) {
+        for (int y = 0; y < rect.size.y; ++y) {
+            const ivec2 currentPosition = { x, y };
+            ivec2 axialPosition = currentPosition + rect.position + uniforms.cameraHex;
+            axialPosition.x -= ceilHalf(axialPosition.y - ((uniforms.cameraHex.y & 1) ^ (axialPosition.y & 1)));
+            const Tile *tile = getTile(tilemap, axialPosition);
+            hexes[x + y * rect.size.x] = tile->isVisible ? tile->terrain : Terrain::None;
         }
-
-        glBindBuffer(GL_UNIFORM_BUFFER, buffers[1]);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(uniforms), &uniforms, GL_DYNAMIC_DRAW);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffers[1]);
     }
 
-    scrollCache = zoom;
-    cameraChanged = false;
-    cameraHexChanged = false;
+    glBindBuffer(GL_UNIFORM_BUFFER, buffers[1]);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(uniforms), &uniforms, GL_DYNAMIC_DRAW);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffers[1]);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    glBufferData(GL_ARRAY_BUFFER, rect.size.x * rect.size.y, hexes, GL_DYNAMIC_DRAW);
     
     #ifdef _DEBUG
     glClear(GL_COLOR_BUFFER_BIT);
@@ -255,7 +243,5 @@ void graphics::moveCamera(Direction direction, float distance) {
         if (direction == Vertical) {
             uniforms.camera.x += signFromBool(uniforms.cameraHex.y & 1) * 0.5f;
         }
-        cameraHexChanged = true;
     }
-    cameraChanged = true;
 }
