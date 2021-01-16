@@ -118,10 +118,14 @@ GLFWwindow *graphics::init(const char *title) {
     
     glGenVertexArrays(lengthof(vertexArrays), vertexArrays);
     glGenBuffers(lengthof(buffers), buffers);
+    glBindBuffer(GL_UNIFORM_BUFFER, buffers[0]);
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffers[0]);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(uniforms), &uniforms, GL_DYNAMIC_DRAW);
     glBindVertexArray(vertexArrays[0]);
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
     glEnableVertexAttribArray(0);
     glVertexAttribIPointer(0, 1, GL_UNSIGNED_BYTE, 0, 0);
+    glBufferData(GL_ARRAY_BUFFER, getArea(minZoom), nullptr, GL_DYNAMIC_DRAW);
     glBindVertexArray(vertexArrays[1]);
     glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
     glEnableVertexAttribArray(0);
@@ -208,12 +212,11 @@ void graphics::render(GLFWwindow *window, Tilemap *tilemap, const ivec2 *entitie
         }
     }
 
-    glBindBuffer(GL_UNIFORM_BUFFER, buffers[1]);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(uniforms), &uniforms, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffers[1]);
+    constexpr int offset = sizeof(uniforms.positions) + sizeof(uniforms.hexSize);
+    glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(uniforms) - offset, &uniforms.camera);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffers[0]);
-    glBufferData(GL_ARRAY_BUFFER, rect.size.x * rect.size.y, hexes, GL_DYNAMIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, rect.size.x * rect.size.y, hexes);
     
     #ifdef _DEBUG
     glClear(GL_COLOR_BUFFER_BIT);

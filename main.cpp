@@ -22,7 +22,10 @@ static void handleScroll(GLFWwindow *window, double xOffset, double yOffset) {
 
 static ivec2 entities[] = {
     0, 0,
+    0, 1,
 };
+
+static ivec2 *selectedEntity = nullptr;
 
 static float getZoom(float scroll) {
     static const float factor = logf(maxZoom / minZoom) / maxScroll;
@@ -30,7 +33,7 @@ static float getZoom(float scroll) {
 }
 
 static void handleClick(GLFWwindow *window, int button, int action, int mods) {
-    if (action == GLFW_PRESS && button == GLFW_MOUSE_BUTTON_LEFT) {
+    if (action == GLFW_PRESS) {
         double x, y;
         glfwGetCursorPos(window, &x, &y);
         vec2 cursor = { float(x), float(y) };
@@ -38,17 +41,17 @@ static void handleClick(GLFWwindow *window, int button, int action, int mods) {
         glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
         cursor.x = cursor.x / (windowSize.x / 2) - 1.0f;
         cursor.y = 1.0f - cursor.y / (windowSize.y / 2);
-        vec2 camera = graphics::getCamera();
+        const vec2 camera = graphics::getCamera();
         const float zoom = getZoom(scroll);
-        float hexWidth = sqrt3 * windowSize.y / windowSize.x;
-        float q = (cursor.x / hexWidth - cursor.y / hexHeight / 2) / zoom - camera.x + camera.y / 2;
-        float r = (cursor.y / hexHeight) / zoom - camera.y;
+        const float hexWidth = sqrt3 * windowSize.y / windowSize.x;
+        const float q = (cursor.x / hexWidth - cursor.y / hexHeight / 2) / zoom - camera.x + camera.y / 2;
+        const float r = (cursor.y / hexHeight) / zoom - camera.y;
         int rx = iround(q);
-        int ry = iround(-q - r);
+        const int ry = iround(-q - r);
         int rz = iround(r);
-        float dx = fabsf(rx - q);
-        float dy = fabsf(ry + q + r);
-        float dz = fabsf(rz - r);
+        const float dx = fabsf(rx - q);
+        const float dy = fabsf(ry + q + r);
+        const float dz = fabsf(rz - r);
         if (dx > dy && dx > dz) {
             rx = -ry-rz;
         } else {
@@ -56,8 +59,22 @@ static void handleClick(GLFWwindow *window, int button, int action, int mods) {
                 rz = -rx-ry;
             }
         }
-        ivec2 result = ivec2{ rx, rz } + graphics::getCameraHex();
-        entities[0] = result;
+        const ivec2 result = ivec2{ rx, rz } + graphics::getCameraHex();
+        switch (button) {
+            case GLFW_MOUSE_BUTTON_LEFT:
+                for (ivec2 &entity : entities) {
+                    if (entity == result) {
+                        selectedEntity = &entity;
+                        return;
+                    }
+                }
+                selectedEntity = nullptr;
+                break;
+            case GLFW_MOUSE_BUTTON_RIGHT:
+                if (selectedEntity == nullptr) return;
+                *selectedEntity = result;
+                break;
+        }
     }
 }
 
