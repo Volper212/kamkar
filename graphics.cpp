@@ -212,8 +212,7 @@ void graphics::render(GLFWwindow *window, Tilemap *tilemap, const ivec2 *entitie
         }
     }
 
-    constexpr int offset = sizeof(uniforms.positions) + sizeof(uniforms.hexSize);
-    glBufferSubData(GL_UNIFORM_BUFFER, offset, sizeof(uniforms) - offset, &uniforms.camera);
+    glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(uniforms), &uniforms);
 
     glBindBuffer(GL_ARRAY_BUFFER, buffers[1]);
     glBufferSubData(GL_ARRAY_BUFFER, 0, rect.size.x * rect.size.y, hexes);
