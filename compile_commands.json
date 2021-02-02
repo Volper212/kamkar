@@ -1,0 +1,7 @@
+[
+    {
+        "directory": "/home/igor/dev/kamkar",
+        "file": "*.cpp",
+        "command": "clang++ -std=c++20 -I./dependencies/include"
+    }
+]
