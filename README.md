@@ -1,5 +1,5 @@
 # kamkar
-A cross-platform tile-based hex game made in C++ and OpenGL.
+A cross-platform tile-based hex game made in C++ and OpenGL ![](https://i.imgur.com/rbcgSc9.png)
 ## Features
 - An "infinite" procedurally generated map
 - Select an entity (player) by left-clicking the hex it is on (left-click on an empty hex to deselect)
@@ -17,4 +17,4 @@ A cross-platform tile-based hex game made in C++ and OpenGL.
 ### Windows
 Open `kamkar.sln` using Visual Studio, switch to Release mode with x86 and click "Local Windows Debugger". If you want to share the executable (which you can find in the `Release` folder), make sure to copy the `textures` folder to the same folder as `kamkar.exe`.
 ### Linux
-Install the libraries using a package manager, then run `source ./build.sh`.
+Install the libraries (GLEW, GLFW) using a package manager, then run `source ./build.sh`.
