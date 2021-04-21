@@ -1,5 +1,5 @@
 # kamkar
-A cross-platform tile-based hex game made in C++.
+A cross-platform tile-based hex game made in C++ and OpenGL.
 ## Features
 - An "infinite" procedurally generated map
 - Select an entity (player) by left-clicking the hex it is on (left-click on an empty hex to deselect)
