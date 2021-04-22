@@ -31,35 +31,40 @@ constexpr int iround(float input) {
     return iceil(input - 0.5f);
 }
 
-enum Direction : unsigned char {
+enum Direction : uchar {
     Horizontal,
     Vertical
 };
 
 template <typename T>
-union tvec2 {
+union vec2 {
     struct {
         T x, y;
     };
     T xy[2];
+
+    constexpr vec2 operator +(vec2 other) const {
+        return { x + other.x, y + other.y };
+    }
+
+    constexpr vec2 operator -(vec2 other) const {
+        return { x - other.x, y - other.y };
+    }
+
+    constexpr vec2 operator *(T number) const {
+        return { x * number, y * number };
+    }
+
+    constexpr vec2 operator >>(T number) const {
+        return { x >> number, y >> number };
+    }
+
+    constexpr vec2 operator &(T number) const {
+        return { x & number, y & number };
+    }
+
+    constexpr bool operator ==(vec2 other) const {
+        return x == other.x && y == other.y;
+    }
 };
 
-using vec2 = tvec2<float>;
-using ivec2 = tvec2<int>;
-
-#define BINARY_OPERATOR_VECTORS(op) template <typename T> constexpr tvec2<T> operator op(tvec2<T> left, tvec2<T> right) { return { left.x op right.x, left.y op right.y }; }
-
-BINARY_OPERATOR_VECTORS(+)
-BINARY_OPERATOR_VECTORS(-)
-
-constexpr vec2 operator /(vec2 left, float right) { return { left.x / right, left.y / right }; }
-
-#define BIT_OPERATOR_VECTOR_NUMBER(op) constexpr ivec2 operator op(ivec2 left, int right) { return { left.x op right, left.y op right }; }
-
-BIT_OPERATOR_VECTOR_NUMBER(>>)
-BIT_OPERATOR_VECTOR_NUMBER(&)
-BIT_OPERATOR_VECTOR_NUMBER(*)
-
-constexpr bool operator ==(ivec2 left, ivec2 right) {
-    return left.x == right.x && left.y == right.y;
-}

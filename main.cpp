@@ -20,12 +20,12 @@ static void handleScroll(GLFWwindow *window, double xOffset, double yOffset) {
     scroll = clamp(scroll + float(yOffset), 0.0f, maxScroll);
 }
 
-static ivec2 entities[] = {
+static vec2<int> entities[] = {
     0, 0,
     0, 1,
 };
 
-static ivec2 *selectedEntity = nullptr;
+static vec2<int> *selectedEntity = nullptr;
 
 static float getZoom(float scroll) {
     static const float factor = logf(maxZoom / minZoom) / maxScroll;
@@ -36,11 +36,11 @@ static void handleClick(GLFWwindow *window, int button, int action, int mods) {
     if (action == GLFW_PRESS) {
         double x, y;
         glfwGetCursorPos(window, &x, &y);
-        vec2 cursor = { float(x), float(y) };
-        ivec2 windowSize;
+        vec2<float> cursor = { float(x), float(y) };
+        vec2<int> windowSize;
         glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
-        cursor.x = cursor.x / (windowSize.x / 2) - 1.0f;
-        cursor.y = 1.0f - cursor.y / (windowSize.y / 2);
+        cursor.x = cursor.x / (windowSize.x / 2.0f) - 1.0f;
+        cursor.y = 1.0f - cursor.y / (windowSize.y / 2.0f);
         const vec2 camera = graphics::getCamera();
         const float zoom = getZoom(scroll);
         const float hexWidth = sqrt3 * windowSize.y / windowSize.x;
@@ -59,10 +59,10 @@ static void handleClick(GLFWwindow *window, int button, int action, int mods) {
                 rz = -rx-ry;
             }
         }
-        const ivec2 result = ivec2{ rx, rz } + graphics::getCameraHex();
+        const vec2<int> result = vec2<int>{ rx, rz } + graphics::getCameraHex();
         switch (button) {
             case GLFW_MOUSE_BUTTON_LEFT:
-                for (ivec2 &entity : entities) {
+                for (vec2<int> &entity : entities) {
                     if (entity == result) {
                         selectedEntity = &entity;
                         return;
@@ -91,10 +91,10 @@ int main() {
 
     while (!glfwWindowShouldClose(window)) {
         constexpr int radius = 10;
-        for (ivec2 entity : entities) {
+        for (vec2<int> entity : entities) {
             for (int x = -radius; x <= radius; ++x) {
                 for (int y = -radius - min(x, 0); y <= radius - max(x, 0); ++y) {
-                    getTile(tilemap, entity + ivec2{ x, y })->isVisible = true;
+                    getTile(tilemap, entity + vec2<int>{ x, y })->isVisible = true;
                 }
             }
         }

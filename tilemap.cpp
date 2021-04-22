@@ -26,7 +26,7 @@ struct Tilemap {
     Tree tree;
     fnl_state fnlState;
     Chunk *chunkCache;
-    ivec2 cachePosition;
+    vec2<int> cachePosition;
 };
 
 template <uchar N>
@@ -44,15 +44,15 @@ static Terrain terrainFromNoise(float noise) {
     return Terrain(splitFloat(noise, splitPoints) + 1);
 }
 
-static vec2 hexToPixel(ivec2 hex) {
+static vec2<float> hexToPixel(vec2<int> hex) {
     return { sqrt3 * hex.x + sqrt3 / 2 * hex.y, hexHeight * hex.y };
 }
 
-static Chunk *generateChunk(ivec2 position, fnl_state *fnlState) {
+static Chunk *generateChunk(vec2<int> position, fnl_state *fnlState) {
     Chunk *chunk = ecalloc<Chunk>(1);
     for (int x = 0; x < chunkSize; ++x) {
         for (int y = 0; y < chunkSize; ++y) {
-            const vec2 pixel = hexToPixel(position * chunkSize + ivec2{ x, y });
+            const vec2 pixel = hexToPixel(position * chunkSize + vec2<int>{ x, y });
             chunk->tiles[x][y].terrain = terrainFromNoise(fnlGetNoise2D(fnlState, pixel.x, pixel.y));
         }
     }
@@ -66,15 +66,15 @@ Tilemap *createTilemap() {
     return tilemap;
 };
 
-Tile *getTile(Tilemap *tilemap, ivec2 position) {
+Tile *getTile(Tilemap *tilemap, vec2<int> position) {
     // using >> and & because / and % are fucked up at negative values
-    const ivec2 chunkPosition = position >> chunkSizeLog2;
+    const vec2<int> chunkPosition = position >> chunkSizeLog2;
 
     if (tilemap->chunkCache == nullptr || tilemap->cachePosition != chunkPosition) {
         void *node = &tilemap->tree;
 
         for (int currentDepth = maxDepth; currentDepth >= 0; --currentDepth) {
-            const ivec2 treePosition = (chunkPosition >> (currentDepth * treeSizeLog2)) & (treeSize - 1);
+            const vec2<int> treePosition = (chunkPosition >> (currentDepth * treeSizeLog2)) & (treeSize - 1);
             void *&subnode = static_cast<Tree *>(node)->nodes[treePosition.x][treePosition.y];
             if (subnode == nullptr) {
                 if (currentDepth > 0) {
@@ -90,6 +90,6 @@ Tile *getTile(Tilemap *tilemap, ivec2 position) {
         tilemap->cachePosition = chunkPosition;
     }
 
-    const ivec2 inChunkPosition = position & (chunkSize - 1);
+    const vec2<int> inChunkPosition = position & (chunkSize - 1);
     return &tilemap->chunkCache->tiles[inChunkPosition.x][inChunkPosition.y];
 }

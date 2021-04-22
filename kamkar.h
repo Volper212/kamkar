@@ -10,7 +10,8 @@ template <typename T>
 T *emalloc(unsigned int count) {
     T *const result = static_cast<T *>(malloc(count * sizeof(T)));
     if (result == nullptr) {
-        perror("Allocation with calloc failed");
+        perror("Allocation with malloc failed");
+        exit(1);
     }
     return result;
 }
@@ -19,7 +20,8 @@ template <typename T>
 T *ecalloc(unsigned int count) {
     T *const result = static_cast<T *>(calloc(count, sizeof(T)));
     if (result == nullptr) {
-        perror("Allocation with malloc failed");
+        perror("Allocation with calloc failed");
+        exit(1);
     }
     return result;
 }
@@ -47,13 +49,13 @@ struct Tile {
 };
 
 Tilemap *createTilemap();
-Tile *getTile(Tilemap *map, ivec2 position);
+Tile *getTile(Tilemap *map, vec2<int> position);
 
 namespace graphics {
     GLFWwindow *init(const char *title);
-    void render(GLFWwindow *window, Tilemap *map, const ivec2 *entities, int entityCount, float zoom);
+    void render(GLFWwindow *window, Tilemap *map, const vec2<int> *entities, int entityCount, float zoom);
 
     void moveCamera(Direction direction, float distance);
-    vec2 getCamera();
-    ivec2 getCameraHex();
+    vec2<float> getCamera();
+    vec2<int> getCameraHex();
 }

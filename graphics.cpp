@@ -22,8 +22,8 @@ static uint compileShader(uint type, const char *source) {
 }
 
 struct Rect {
-    ivec2 position;
-    ivec2 size;
+    vec2<int> position;
+    vec2<int> size;
 };
 
 static int ceilHalf(int input) {
@@ -35,11 +35,11 @@ static uint hexProgram, entityProgram;
 static uint vertexArrays[2];
 static Terrain *hexes;
 static struct {
-    vec2 positions[12];
-    vec2 hexSize;
-    vec2 camera;
-    ivec2 cameraHex;
-    ivec2 offset;
+    vec2<float> positions[12];
+    vec2<float> hexSize;
+    vec2<float> camera;
+    vec2<int> cameraHex;
+    vec2<int> offset;
     int width;
     float zoom;
 } uniforms;
@@ -56,16 +56,16 @@ static Rect getRect(float zoom) {
 }
 
 static int getArea(float zoom) {
-    const ivec2 size = getRect(zoom).size;
+    const vec2<int> size = getRect(zoom).size;
     return size.x * size.y;
 }
 
-vec2 graphics::getCamera() {
+vec2<float> graphics::getCamera() {
     return uniforms.camera;
 }
 
-ivec2 graphics::getCameraHex() {
-    ivec2 result = uniforms.cameraHex;
+vec2<int> graphics::getCameraHex() {
+    vec2<int> result = uniforms.cameraHex;
     result.x -= ceilHalf(result.y);
     return result;
 }
@@ -99,7 +99,7 @@ GLFWwindow *graphics::init(const char *title) {
     uniforms.hexSize.y = hexHeight;
     hexes = emalloc<Terrain>(getArea(minZoom));
 
-    vec2 positions[] = {
+    vec2<float> positions[] = {
         0.0f, -1.0f,
         -0.5f, -0.5f,
         0.5f, -0.5f,
@@ -193,7 +193,7 @@ GLFWwindow *graphics::init(const char *title) {
     return window;
 }
 
-void graphics::render(GLFWwindow *window, Tilemap *tilemap, const ivec2 *entities, int entityCount, float zoom) {
+void graphics::render(GLFWwindow *window, Tilemap *tilemap, const vec2<int> *entities, int entityCount, float zoom) {
     glUseProgram(hexProgram);
     glBindVertexArray(vertexArrays[0]);
 
@@ -204,8 +204,8 @@ void graphics::render(GLFWwindow *window, Tilemap *tilemap, const ivec2 *entitie
     uniforms.offset = rect.position;
     for (int x = 0; x < rect.size.x; ++x) {
         for (int y = 0; y < rect.size.y; ++y) {
-            const ivec2 currentPosition = { x, y };
-            ivec2 axialPosition = currentPosition + rect.position + uniforms.cameraHex;
+            const vec2<int> currentPosition = { x, y };
+            vec2<int> axialPosition = currentPosition + rect.position + uniforms.cameraHex;
             axialPosition.x -= ceilHalf(axialPosition.y - ((uniforms.cameraHex.y & 1) ^ (axialPosition.y & 1)));
             const Tile *tile = getTile(tilemap, axialPosition);
             hexes[x + y * rect.size.x] = tile->isVisible ? tile->terrain : Terrain::None;
@@ -226,7 +226,7 @@ void graphics::render(GLFWwindow *window, Tilemap *tilemap, const ivec2 *entitie
     glUseProgram(entityProgram);
     glBindVertexArray(vertexArrays[1]);
     glBindBuffer(GL_ARRAY_BUFFER, buffers[2]);
-    glBufferData(GL_ARRAY_BUFFER, entityCount * sizeof(vec2), entities, GL_DYNAMIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, entityCount * sizeof(vec2<float>), entities, GL_DYNAMIC_DRAW);
     glDrawArrays(GL_POINTS, 0, entityCount);
 
     glfwSwapBuffers(window);
