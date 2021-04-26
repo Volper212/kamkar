@@ -1,7 +1,7 @@
 [
     {
-        "directory": "/home/igor/dev/kamkar",
+        "directory": "/home/igor/d/kamkar",
         "file": "*.cpp",
-        "command": "clang++ -std=c++20 -I./dependencies/include"
+        "command": "clang++ -std=c++20 -D _DEBUG=1 -I./dependencies/include -fmodules-ts -fprebuilt-module-path=."
     }
 ]

@@ -70,32 +70,14 @@ vec2<int> graphics::getCameraHex() {
     return result;
 }
 
-GLFWwindow *graphics::init(const char *title) {
-    glfwInit();
-    GLFWmonitor *monitor = glfwGetPrimaryMonitor();
-    const GLFWvidmode *mode = glfwGetVideoMode(monitor);
-
-    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
-    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
-    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    #ifdef _DEBUG
-    glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
-    #endif
-
-    GLFWwindow *window = glfwCreateWindow(mode->width, mode->height, title, monitor, nullptr);
-    glfwMakeContextCurrent(window);
+void graphics::init(vec2<int> size) {
     glewInit();
-    glfwSwapInterval(1);
-    glViewport(0, 0, mode->width, mode->height);
+    glViewport(0, 0, size.x, size.y);
     #ifdef _DEBUG
     glDebugMessageCallback(handleGLError, nullptr);
     #endif
 
-    uniforms.hexSize.x = sqrt3 * mode->height / mode->width;
+    uniforms.hexSize.x = sqrt3 * size.y / size.x;
     uniforms.hexSize.y = hexHeight;
     hexes = emalloc<Terrain>(getArea(minZoom));
 
@@ -189,8 +171,6 @@ GLFWwindow *graphics::init(const char *title) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(data);
-
-    return window;
 }
 
 void graphics::render(GLFWwindow *window, Tilemap *tilemap, const vec2<int> *entities, int entityCount, float zoom) {

@@ -52,7 +52,7 @@ static Chunk *generateChunk(vec2<int> position, fnl_state *fnlState) {
     Chunk *chunk = ecalloc<Chunk>(1);
     for (int x = 0; x < chunkSize; ++x) {
         for (int y = 0; y < chunkSize; ++y) {
-            const vec2 pixel = hexToPixel(position * chunkSize + vec2<int>{ x, y });
+            const vec2<float> pixel = hexToPixel(position * chunkSize + vec2<int>{ x, y });
             chunk->tiles[x][y].terrain = terrainFromNoise(fnlGetNoise2D(fnlState, pixel.x, pixel.y));
         }
     }

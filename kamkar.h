@@ -52,7 +52,7 @@ Tilemap *createTilemap();
 Tile *getTile(Tilemap *map, vec2<int> position);
 
 namespace graphics {
-    GLFWwindow *init(const char *title);
+    void init(vec2<int> windowSize);
     void render(GLFWwindow *window, Tilemap *map, const vec2<int> *entities, int entityCount, float zoom);
 
     void moveCamera(Direction direction, float distance);

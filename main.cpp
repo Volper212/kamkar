@@ -1,4 +1,5 @@
 #include "kamkar.h"
+import window;
 
 #if defined(WIN32) && defined(NDEBUG)
 #pragma comment(linker, "/SUBSYSTEM:windows /ENTRY:mainCRTStartup")
@@ -16,8 +17,8 @@ static float clamp(float value, float min, float max) {
 
 static float scroll = 50.0f;
 
-static void handleScroll(GLFWwindow *window, double xOffset, double yOffset) {
-    scroll = clamp(scroll + float(yOffset), 0.0f, maxScroll);
+static void handleScroll(float offset, void* data) {
+    scroll = clamp(scroll + offset, 0.0f, maxScroll);
 }
 
 static vec2<int> entities[] = {
@@ -41,7 +42,7 @@ static void handleClick(GLFWwindow *window, int button, int action, int mods) {
         glfwGetWindowSize(window, &windowSize.x, &windowSize.y);
         cursor.x = cursor.x / (windowSize.x / 2.0f) - 1.0f;
         cursor.y = 1.0f - cursor.y / (windowSize.y / 2.0f);
-        const vec2 camera = graphics::getCamera();
+        const vec2<float> camera = graphics::getCamera();
         const float zoom = getZoom(scroll);
         const float hexWidth = sqrt3 * windowSize.y / windowSize.x;
         const float q = (cursor.x / hexWidth - cursor.y / hexHeight / 2) / zoom - camera.x + camera.y / 2;
@@ -81,9 +82,10 @@ static void handleClick(GLFWwindow *window, int button, int action, int mods) {
 int main() {
     Tilemap *tilemap = createTilemap();
 
-    GLFWwindow *window = graphics::init("Kamkar");
+    Window w("Kamkar", { handleScroll, &scroll });
+    GLFWwindow *window = w.get();
+    graphics::init(w.getSize());
 
-    glfwSetScrollCallback(window, handleScroll);
     glfwSetMouseButtonCallback(window, handleClick);
 
     float previousFrame = float(glfwGetTime());
