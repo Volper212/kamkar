@@ -1,0 +1,5 @@
+/home/igor/d/kamkar/build/CMakeFiles/edit_cache.dir
+/home/igor/d/kamkar/build/CMakeFiles/main.dir
+/home/igor/d/kamkar/build/CMakeFiles/window.pcm.dir
+/home/igor/d/kamkar/build/CMakeFiles/rebuild_cache.dir
+/home/igor/d/kamkar/build/CMakeFiles/vec2.pcm.dir

@@ -1,10 +1,11 @@
 #pragma once
-#include <GLFW/glfw3.h>
+import vec2;
+import window;
+#include "util.h"
 #include <noise.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "util.h"
 
 template <typename T>
 T *emalloc(unsigned int count) {
@@ -55,7 +56,7 @@ namespace graphics {
     void init(vec2<int> windowSize);
     void render(GLFWwindow *window, Tilemap *map, const vec2<int> *entities, int entityCount, float zoom);
 
-    void moveCamera(Direction direction, float distance);
+    void moveCamera(Dimension, float distance);
     vec2<float> getCamera();
     vec2<int> getCameraHex();
 }

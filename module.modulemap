@@ -1,0 +1,3 @@
+module GLFW {
+    header "dependencies/include/GLFW/glfw3.h"
+}

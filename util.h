@@ -30,10 +30,3 @@ constexpr int iceil(float input) {
 constexpr int iround(float input) {
     return iceil(input - 0.5f);
 }
-
-enum Direction : uchar {
-    Horizontal,
-    Vertical
-};
-
-import vec2;

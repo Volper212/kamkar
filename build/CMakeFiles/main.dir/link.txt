@@ -1,0 +1,1 @@
+/usr/bin/clang++ -lGLEW -lGL -lglfw CMakeFiles/main.dir/vec2.cpp.o CMakeFiles/main.dir/window.cpp.o CMakeFiles/main.dir/main.cpp.o CMakeFiles/main.dir/graphics.cpp.o CMakeFiles/main.dir/noise.cpp.o CMakeFiles/main.dir/stb_image.cpp.o CMakeFiles/main.dir/tilemap.cpp.o -o main 

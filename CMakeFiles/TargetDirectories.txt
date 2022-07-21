@@ -1,0 +1,2 @@
+/home/igor/d/kamkar/CMakeFiles/rebuild_cache.dir
+/home/igor/d/kamkar/CMakeFiles/edit_cache.dir

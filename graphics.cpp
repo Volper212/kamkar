@@ -82,12 +82,12 @@ void graphics::init(vec2<int> size) {
     hexes = emalloc<Terrain>(getArea(minZoom));
 
     vec2<float> positions[] = {
-        0.0f, -1.0f,
-        -0.5f, -0.5f,
-        0.5f, -0.5f,
-        -0.5f, 0.5f,
-        0.5f, 0.5f,
-        0.0f, 1.0f
+        {0.0f, -1.0f},
+        {-0.5f, -0.5f},
+        {0.5f, -0.5f},
+        {-0.5f, 0.5f},
+        {0.5f, 0.5f},
+        {0.0f, 1.0f}
     };
 
     for (int i = 0; i < lengthof(positions); ++i) {
@@ -216,13 +216,13 @@ static int signFromBool(bool isNegative) {
     return isNegative ? -1 : 1;
 }
 
-void graphics::moveCamera(Direction direction, float distance) {
+void graphics::moveCamera(Dimension dimension, float distance) {
     const int sign = signFromBool(distance < 0.0f);
-    uniforms.camera.xy[direction] += distance;
-    while (sign * uniforms.camera.xy[direction] > 0.5f) {
-        uniforms.camera.xy[direction] -= sign;
-        uniforms.cameraHex.xy[direction] -= sign;
-        if (direction == Vertical) {
+    uniforms.camera[dimension] += distance;
+    while (sign * uniforms.camera[dimension] > 0.5f) {
+        uniforms.camera[dimension] -= sign;
+        uniforms.cameraHex[dimension] -= sign;
+        if (dimension == Y) {
             uniforms.camera.x += signFromBool(uniforms.cameraHex.y & 1) * 0.5f;
         }
     }

@@ -2,6 +2,6 @@
     {
         "directory": "/home/igor/d/kamkar",
         "file": "*.cpp",
-        "command": "clang++ -std=c++20 -D _DEBUG=1 -I./dependencies/include -fmodules-ts -fprebuilt-module-path=."
+        "command": "clang++ -std=c++20 -stdlib=libc++ -D _DEBUG=1 -I./dependencies/include -fmodules -fprebuilt-module-path=. -fmodule-map-file=module.modulemap"
     }
 ]

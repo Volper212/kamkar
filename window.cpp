@@ -1,23 +1,27 @@
-#include <GLFW/glfw3.h>
+module;
 export module window;
+export import GLFW;
 import vec2;
 
-export struct Events {
-    void (*onScroll)(float offset, void* data);
-    void* data;
-};
-
-Events const* getEvents(GLFWwindow* window) {
-    return static_cast<Events const*>(glfwGetWindowUserPointer(window));
+vec2<float> getCursorPosition(GLFWwindow* window) {
+    vec2<double> cursor;
+    glfwGetCursorPos(window, &cursor.x, &cursor.y);
+    return vec2<float>(cursor);
 }
 
-void handleScroll(GLFWwindow* window, double xOffset, double yOffset) {
-    Events const* const events = getEvents(window);
-    events->onScroll(yOffset, events->data);
+constexpr float sqrt3 = 1.73205080757f;
+
+vec2<float> convertWindowToAxialCoordinates(GLFWwindow* window, vec2<float> position) {
+    vec2<int> size;
+    glfwGetWindowSize(window, &size.x, &size.y);
+    vec2<float> const scaled =
+        (position / (size * 0.5f) - 1) / vec2<float>(sqrt3 * size.y / size.x, -1.5f);
+    return vec2<float>(scaled.x - scaled.y / 2, scaled.y);
 }
 
-export struct Window {
-    Window(char const* title, Events events) : events(events) {
+export template <class Events>
+struct Window {
+    Window(char const* title, Events* events) {
         glfwInit();
         GLFWmonitor* const monitor = glfwGetPrimaryMonitor();
         GLFWvidmode const* const mode = glfwGetVideoMode(monitor);
@@ -38,8 +42,9 @@ export struct Window {
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
 
-        glfwSetWindowUserPointer(window, &this->events);
+        glfwSetWindowUserPointer(window, events);
         glfwSetScrollCallback(window, handleScroll);
+        glfwSetMouseButtonCallback(window, handleClick);
     };
 
     GLFWwindow* get() {
@@ -53,5 +58,20 @@ export struct Window {
   private:
     GLFWwindow* window;
     vec2<int> size;
-    Events events;
+
+    static Events* getEvents(GLFWwindow* window) {
+        return static_cast<Events*>(glfwGetWindowUserPointer(window));
+    }
+
+    static void handleScroll(GLFWwindow* window, double xOffset, double yOffset) {
+        getEvents(window)->handleScroll(yOffset);
+    }
+
+    static void handleClick(GLFWwindow* window, int button, int action, int mods) {
+        if (action != GLFW_PRESS) return;
+        if (button != GLFW_MOUSE_BUTTON_LEFT && button != GLFW_MOUSE_BUTTON_RIGHT) return;
+        getEvents(window)->handleClick(
+            convertWindowToAxialCoordinates(window, getCursorPosition(window)),
+            button == GLFW_MOUSE_BUTTON_LEFT);
+    }
 };
